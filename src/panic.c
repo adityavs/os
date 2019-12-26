@@ -2,7 +2,13 @@
 
 #include "kernel/stdio.h"
 
-void panic(const char *s) {
-	printf("\033[91mKernel panic: \033[97m%s\n", s);
+void panic(const char *format, ...) {
+	printf("\033[91mKernel panic: \033[97m");
+
+	va_list args;
+	va_start(args, format);
+	vprintf(format, args);
+	va_end(args);
+
 	for (;;);
 }

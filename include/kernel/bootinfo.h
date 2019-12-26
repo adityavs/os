@@ -1,5 +1,5 @@
-#ifndef _BOOTINFO_H
-#define _BOOTINFO_H 1
+#ifndef _KERNEL_BOOTINFO_H
+#define _KERNEL_BOOTINFO_H 1
 
 #define BOOTINFO_MMAP_START 0x500
 

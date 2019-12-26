@@ -1,5 +1,5 @@
-#ifndef _CTYPE_H
-#define _CTYPE_H 1
+#ifndef _KERNEL_CTYPE_H
+#define _KERNEL_CTYPE_H 1
 
 int isdigit(int);
 

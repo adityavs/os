@@ -1,5 +1,5 @@
-#ifndef _CLOCK_H
-#define _CLOCK_H 1
+#ifndef _KERNEL_CLOCK_H
+#define _KERNEL_CLOCK_H 1
 
 #include <stdint.h>
 

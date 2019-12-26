@@ -65,7 +65,7 @@ void debug_mmap() {
 		printf("  entry[%d]: 0x%x to 0x%x (%d bytes), type=%d\n",
 				i, e->base, e->base + e->length, e->length, e->type);
 	}
-	printf("%d bytes (%d MiB) of usable memory.\n\n", usable, usable / (1024 * 1024));
+	printf("%d bytes (%d MiB) of usable memory.\n", usable, usable / (1024 * 1024));
 }
 
 void debug_pages(uint64_t p4addr) {
@@ -130,9 +130,25 @@ void kernel_main() {
 	// Memory
 	debug_mmap();
 	memory_init();
-	debug_pages(read_cr3());
+//	debug_pages(read_cr3());
 
-	printf("All is booted and well.\n");
+	printf("\n");
+
+	printf("sizeof(struct heap_node)=%d\n\n", sizeof(struct heap_node));
+	
+	heap_dump();
+	uint64_t *a = heap_alloc(sizeof(uint32_t)); heap_dump();
+	uint64_t *b = heap_alloc(sizeof(uint32_t)); heap_dump();
+	uint64_t *c = heap_alloc(512); heap_dump();
+	heap_free(b); heap_dump();
+	uint64_t *d = heap_alloc(sizeof(uint16_t)); heap_dump();
+	heap_free(a); heap_dump();
+	heap_free(d); heap_dump();
+	uint64_t *e = heap_alloc(sizeof(uint64_t)); heap_dump();
+	heap_free(c); heap_dump();
+	heap_free(e); heap_dump();
+
+	printf("\nAll is booted and well.\n");
 
 //	asm ("int $3");
 

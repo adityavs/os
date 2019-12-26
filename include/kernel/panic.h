@@ -1,6 +1,8 @@
-#ifndef _PANIC_H
-#define _PANIC_H
+#ifndef _KERNEL_PANIC_H
+#define _KERNEL_PANIC_H
 
-void panic(const char*);
+#include <stdarg.h>
+
+void panic(const char*, ...);
 
 #endif

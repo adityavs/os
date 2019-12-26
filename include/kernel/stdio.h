@@ -1,5 +1,5 @@
-#ifndef _STDIO_H
-#define _STDIO_H 1
+#ifndef _KERNEL_STDIO_H
+#define _KERNEL_STDIO_H 1
 
 #include <stdarg.h>
 
