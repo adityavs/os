@@ -1,20 +1,38 @@
 #ifndef _KERNEL_IO_H
 #define _KERNEL_IO_H 1
 
-static inline void outb(uint16_t port, uint8_t val) {
+static inline void out8(uint16_t port, uint8_t val) {
 	asm volatile ("outb %0, %1" : : "a" (val), "Nd" (port));
 }
 
-static inline uint8_t inb(uint16_t port) {
+static inline void out16(uint16_t port, uint16_t val) {
+	asm volatile ("outw %0, %1" : : "a" (val), "Nd" (port));
+}
+
+static inline void out32(uint16_t port, uint32_t val) {
+	asm volatile ("outl %0, %1" : : "a" (val), "Nd" (port));
+}
+
+static inline uint8_t in8(uint16_t port) {
 	uint8_t ret;
 	asm volatile ("inb %1, %0" : "=a" (ret) : "Nd" (port));
 	return ret;
 }
 
-static inline uint16_t inw(uint16_t port) {
+static inline uint16_t in16(uint16_t port) {
 	uint16_t ret;
 	asm volatile ("inw %1, %0" : "=a" (ret) : "Nd" (port));
 	return ret;
+}
+
+static inline uint32_t in32(uint16_t port) {
+	uint32_t ret;
+	asm volatile ("inl %1, %0" : "=a" (ret) : "Nd" (port));
+	return ret;
+}
+
+static inline void insl(uint16_t port, uint64_t buffer, uint32_t count) {
+	asm volatile ("cld; rep; insl" : : "D" (buffer), "d" (port), "c" (count));
 }
 
 static inline uint64_t read_cr3() {

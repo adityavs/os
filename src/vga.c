@@ -22,12 +22,12 @@ struct vga_palette_entry palette[16] = {
 };
 
 void vga_init() {
-	while ((inb(0x03DA) & 0x08));
-	while (!(inb(0x03DA) & 0x08));
+	while ((in8(0x03DA) & 0x08));
+	while (!(in8(0x03DA) & 0x08));
 	for (uint8_t i = 0; i < 16; i++) {
-		outb(0x03C8, palette[i].index);
-		outb(0x03C9, palette[i].red);
-		outb(0x03C9, palette[i].green);
-		outb(0x03C9, palette[i].blue);
+		out8(0x03C8, palette[i].index);
+		out8(0x03C9, palette[i].red);
+		out8(0x03C9, palette[i].green);
+		out8(0x03C9, palette[i].blue);
 	}
 }

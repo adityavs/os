@@ -30,11 +30,9 @@ build/%.c.o: src/%.c
 
 
 run: $(TARGET)
-	qemu-system-x86_64 -drive format=raw,file=$(TARGET)
+	qemu-system-x86_64 \
+		-drive format=raw,file=$(TARGET)
 
-debug: $(TARGET)
-	qemu-system-x86_64 -drive format=raw,file=$(TARGET) -s -S &
-	st -e gdb
 
 clean:
 	rm -rf build

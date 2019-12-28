@@ -19,19 +19,19 @@ void pit_callback(struct isr_stack s) {
 void clock_init() {
 	interrupts_set_handler(32, &pit_callback);
 	uint64_t divisor = 1193; // 1193180Hz^2 / 1000Hz;
-	outb(0x43, 0x36);
-	outb(0x40, (uint8_t) (divisor & 0xFF));
-	outb(0x40, (uint8_t) ((divisor >> 8) & 0xFF));
+	out8(0x43, 0x36);
+	out8(0x40, (uint8_t) (divisor & 0xFF));
+	out8(0x40, (uint8_t) ((divisor >> 8) & 0xFF));
 }
 
 bool is_cmos_updating() {
-    outb(CMOS_ADDRESS, 0x0A);
-    return (inb(CMOS_DATA) & 0x80);
+    out8(CMOS_ADDRESS, 0x0A);
+    return (in8(CMOS_DATA) & 0x80);
 }
 
 uint8_t get_register(int r) {
-    outb(CMOS_ADDRESS, r);
-    return inb(CMOS_DATA);
+    out8(CMOS_ADDRESS, r);
+    return in8(CMOS_DATA);
 }
 
 #define BCD_TO_INT(val) (((val) >> 4) * 10 + ((val) & 0xF))
