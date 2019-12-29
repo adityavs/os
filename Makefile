@@ -30,8 +30,10 @@ build/%.c.o: src/%.c
 
 
 run: $(TARGET)
+	dd if=$(TARGET) of=hdd.img conv=notrunc
+	./tfs
 	qemu-system-x86_64 \
-		-drive format=raw,file=$(TARGET)
+		-drive format=raw,file=hdd.img
 
 
 clean:

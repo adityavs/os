@@ -79,6 +79,12 @@ int vsprintf(char *buffer, const char *format, va_list args) {
 				while (*s)
 					buffer[written++] = *s++;
 				format++;
+			} else if (*format == 'u') {
+				char *s = itoa(va_arg(args, uint64_t), 10, pad, padchar);
+				pad = 0;
+				while (*s)
+					buffer[written++] = *s++;
+				format++;
 			} else if (*format == 'x') {
 				char *s = itoa(va_arg(args, uint64_t), 16, pad, padchar);
 				pad = 0;

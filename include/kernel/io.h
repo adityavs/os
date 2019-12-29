@@ -13,6 +13,10 @@ static inline void out32(uint16_t port, uint32_t val) {
 	asm volatile ("outl %0, %1" : : "a" (val), "Nd" (port));
 }
 
+static inline void outs32(uint16_t port, uint64_t buffer, uint32_t count) {
+	asm volatile ("cld; rep; outsl" : : "D" (buffer), "d" (port), "c" (count));
+}
+
 static inline uint8_t in8(uint16_t port) {
 	uint8_t ret;
 	asm volatile ("inb %1, %0" : "=a" (ret) : "Nd" (port));
@@ -31,7 +35,7 @@ static inline uint32_t in32(uint16_t port) {
 	return ret;
 }
 
-static inline void insl(uint16_t port, uint64_t buffer, uint32_t count) {
+static inline void ins32(uint16_t port, uint64_t buffer, uint32_t count) {
 	asm volatile ("cld; rep; insl" : : "D" (buffer), "d" (port), "c" (count));
 }
 

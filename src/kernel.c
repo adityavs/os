@@ -20,15 +20,18 @@
 
 #include <stdint.h>
 
+#include "kernel/ata.h"
 #include "kernel/bootinfo.h"
 #include "kernel/clock.h"
-#include "kernel/ide.h"
 #include "kernel/interrupts.h"
 #include "kernel/io.h"
 #include "kernel/memory.h"
 #include "kernel/panic.h"
 #include "kernel/pci.h"
 #include "kernel/stdio.h"
+#include "kernel/stdlib.h"
+#include "kernel/string.h"
+#include "kernel/tfs.h"
 #include "kernel/tty.h"
 #include "kernel/vga.h"
 
@@ -67,7 +70,7 @@ void debug_mmap() {
 		printf("  entry[%d]: 0x%x to 0x%x (%d bytes), type=%d\n",
 				i, e->base, e->base + e->length, e->length, e->type);
 	}
-	printf("%d bytes (%d MiB) of usable memory.\n\n", usable, usable / (1024 * 1024));
+	printf("%u bytes (%d MiB) of usable memory.\n\n", usable, usable / (1024 * 1024));
 }
 
 void debug_pages(uint64_t p4addr) {
@@ -118,6 +121,12 @@ void debug_time() {
 			tm.hour, tm.minute, tm.second);
 }
 
+void debug_tfs() {
+	tfs_print_super();
+	tfs_print_usage();
+	tfs_print_files();
+}
+
 void kernel_main() {
 	// Video
 	vga_init();
@@ -127,21 +136,20 @@ void kernel_main() {
 	// Interrupts
 	interrupts_init();
 	clock_init();
-	debug_time();
+//	debug_time();
 
 	// Memory
-	debug_mmap();
+//	debug_mmap();
 	memory_init();
 //	debug_pages(read_cr3());
 
-	pci_check_all_buses();
-	printf("\n");
+	// Files
+	ata_init();
+	tfs_init();
+	debug_tfs();
 
-	ide_init(0x1F0, 0x3F6, 0x170, 0x376, 0x000);
+	printf("\033[97m* \033[0mHalting system.");
 
-	printf("\nAll is booted and well.\n");
-
-//	asm ("int $3");
-
+	asm ("cli");
 	for (;;);
 }
