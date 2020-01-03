@@ -89,6 +89,9 @@ int tty_append(int ch) {
 }
 
 int tty_putchar(int c) {
+	out8(0x3F8, c);
+	if (c == '\n')
+		out8(0x3F8, '\r');
 	struct tty_ansi_parser *parser = &tty.ansi_parser;
 
 	switch (parser->state) {

@@ -13,6 +13,7 @@ void memory_init();
 
 #define PAGE_SIZE 0x1000
 #define PAGE_SIZE_2MIB 0x200000
+#define PAGE_SIZE_1GIB 0x40000000
 
 struct page_table_entry {
 	uint64_t present : 1;

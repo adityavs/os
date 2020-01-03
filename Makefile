@@ -6,7 +6,7 @@ all: hdd.img
 
 hdd.img: install
 	dd if=build/kernel.bin of=hdd.img conv=notrunc status=none
-	./tfs
+	./mktfs hdd.img 131072 update
 
 install: install-headers
 	@for PROJECT in $(PROJECTS); do\

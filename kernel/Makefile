@@ -21,7 +21,6 @@ all: $(TARGET)
 $(TARGET): $(OBJECTS) $(LINKER_SCRIPT)
 	$(LD) $(LDFLAGS) -T $(LINKER_SCRIPT) -o build/kernel.elf $(OBJECTS) $(LIBS)
 	objcopy -O binary --only-section={.boot,.text,.rodata,.data} build/kernel.elf $(TARGET)
-	truncate -s 66048 $(TARGET)
 
 build/%.s.o: src/%.s
 	@mkdir -p "$(@D)"

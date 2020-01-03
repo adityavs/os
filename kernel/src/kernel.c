@@ -27,6 +27,7 @@
 #include "kernel/ata.h"
 #include "kernel/bootinfo.h"
 #include "kernel/clock.h"
+#include "kernel/elf.h"
 #include "kernel/interrupts.h"
 #include "kernel/io.h"
 #include "kernel/memory.h"
@@ -75,43 +76,46 @@ void debug_mmap() {
 }
 
 void debug_pages(uint64_t p4addr) {
-	struct page_table *p4 = (struct page_table*)
-		((uint64_t) CMM_OFFSET + p4addr);
-	for (uint64_t p4i = 0; p4i < 512; p4i++) {
-		struct page_table_entry *p4e = &p4->entry[p4i];
-		if (p4e->present) {
-			struct page_table *p3 = (struct page_table*)
-				((uint64_t) CMM_OFFSET + p4e->frame * PAGE_SIZE);
-			for (uint64_t p3i = 0; p3i < 512; p3i++) {
-				struct page_table_entry *p3e = &p3->entry[p3i];
-				if (p3e->present) {
-					struct page_table *p2 = (struct page_table*)
-						((uint64_t) CMM_OFFSET + p3e->frame * PAGE_SIZE);
-					for (uint64_t p2i = 0; p2i < 512; p2i++) {
-						struct page_table_entry *p2e = &p2->entry[p2i];
-						if (p2e->present) {
-							if (p2e->huge) {
-								printf("0x%x -> 0x%x (2MiB)\n",
-										p4i << 39 | p3i << 30 | p2i << 21,
-										p2e->frame * PAGE_SIZE_2MIB);
-							} else {
-								struct page_table *p1 = (struct page_table*)
-									((uint64_t) CMM_OFFSET + p2e->frame * PAGE_SIZE);
-								for (uint64_t p1i = 0; p1i < 512; p1i++) {
-									struct page_table_entry *p1e = &p1->entry[p1i];
-									if (p1e->present) {
-										printf("0x%x -> 0x%x\n",
-												p4i << 39 | p3i << 30 | p2i << 21 | p1i << 12,
-												p1e->frame * PAGE_SIZE);
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
+    struct page_table *p4 = (struct page_table*)
+        ((uint64_t) CMM_OFFSET + p4addr);
+    for (uint64_t p4i = 0; p4i < 512; p4i++) {
+        struct page_table_entry *p4e = &p4->entry[p4i];
+        if (!p4e->present)
+            continue;
+        struct page_table *p3 = (struct page_table*)
+            ((uint64_t) CMM_OFFSET + p4e->frame * PAGE_SIZE);
+        for (uint64_t p3i = 0; p3i < 512; p3i++) {
+            struct page_table_entry *p3e = &p3->entry[p3i];
+            if (!p3e->present)
+                continue;
+            if (p3e->huge) {
+                printf("0x%x -> 0x%x (1GiB)\n", p4i << 39 | p3i << 30,
+                        p3e->frame * PAGE_SIZE_1GIB);
+                continue;
+            }
+            struct page_table *p2 = (struct page_table*)
+                ((uint64_t) CMM_OFFSET + p3e->frame * PAGE_SIZE);
+            for (uint64_t p2i = 0; p2i < 512; p2i++) {
+                struct page_table_entry *p2e = &p2->entry[p2i];
+                if (!p2e->present)
+                    continue;
+                if (p2e->huge) {
+                    printf("0x%x -> 0x%x (2MiB)\n", p4i << 39 | p3i << 30 | p2i << 21,
+                            p2e->frame * PAGE_SIZE_2MIB);
+                    continue;
+                }
+                struct page_table *p1 = (struct page_table*)
+                    ((uint64_t) CMM_OFFSET + p2e->frame * PAGE_SIZE);
+                for (uint64_t p1i = 0; p1i < 512; p1i++) {
+                    struct page_table_entry *p1e = &p1->entry[p1i];
+                    if (!p1e->present)
+                        continue;
+                    printf("0x%x -> 0x%x\n", p4i << 39 | p3i << 30 | p2i << 21 | p1i << 12,
+                            p1e->frame * PAGE_SIZE);
+                }
+            }
+        }
+    }
 }
 
 void debug_time() {
@@ -126,6 +130,38 @@ void debug_tfs() {
 	tfs_print_super();
 	tfs_print_usage();
 	tfs_print_files();
+}
+
+void debug_elf() {
+	struct tfs_node node;
+	if (tfs_getnode("/bin/hw", &node) == -1) {
+		printf("Couldn't find '/bin/hw'\n");
+		return;
+	}
+
+//	char *buffer = (char*) malloc(node.size);
+	char buffer[1264] = { 0 };
+	tfs_read("/bin/hw", buffer, 1264);
+
+	struct elf_header *ehdr = (struct elf_header*) buffer;
+	struct elf_program_header *phdr = (struct elf_program_header*) ((size_t) ehdr + ehdr->phoff);
+	for (size_t i = 0; i < ehdr->phnum; i++) {
+		struct elf_program_header *program = &phdr[i];
+		if (program->type == PT_LOAD) {
+			int pages = (program->memsz + PAGE_SIZE - 1) / PAGE_SIZE;
+			int paddr = frame_alloc(pages) * PAGE_SIZE;
+			virtual_map((struct page_table*) read_cr3(), program->vaddr, paddr, pages);
+			//debug_pages(read_cr3());
+			if (program->filesz)
+				memcpy((void*) program->vaddr, buffer, program->filesz);
+		}
+	}
+
+	((void (*)(void))(ehdr->entry))();
+	asm ("cli");
+	for (;;);
+
+//	free(buffer);
 }
 
 void kernel_main() {
@@ -147,7 +183,9 @@ void kernel_main() {
 	// Files
 	ata_init();
 	tfs_init();
-	debug_tfs();
+//	debug_tfs();
+
+	debug_elf();
 
 	printf("\033[97m* \033[0mHalting system.");
 

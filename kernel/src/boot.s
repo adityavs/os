@@ -6,7 +6,7 @@ boot:
 	; Setup stack
 	xor ax, ax
 	mov ss, ax
-	mov sp, 0x7C00
+	mov sp, 0x7000
 
 	; Set up registers
 	xor ax, ax
