@@ -1,16 +1,21 @@
-export SYSROOT="$(shell pwd)/build/sysroot"
+export SYSROOT=$(shell pwd)/build/sysroot
 
-PROJECTS=libc kernel
+TARGET:=build/hdd.img
+PROJECTS=libc kernel programs
 
-all: hdd.img
+$(TARGET): all
+	cp kernel/build/kernel.bin $(TARGET)
+	truncate -s 64M $(TARGET)
+	./mktfs $(TARGET) format
+	mkdir -p mnt
+	./tfsfuse mnt $(TARGET)
+	-cp -r $(SYSROOT)/. mnt/
+	fusermount -u mnt
+	rmdir mnt
 
-hdd.img: install
-	dd if=build/kernel.bin of=hdd.img conv=notrunc status=none
-	./mktfs hdd.img 131072 update
-
-install: install-headers
+all: install-headers
 	@for PROJECT in $(PROJECTS); do\
-		$(MAKE) -C $$PROJECT install;\
+		$(MAKE) -C $$PROJECT;\
 	done
 
 install-headers:
@@ -19,8 +24,8 @@ install-headers:
 	done
 
 
-run: hdd.img
-	qemu-system-x86_64 -drive format=raw,file=hdd.img
+run: $(TARGET)
+	qemu-system-x86_64 -drive format=raw,file=$(TARGET)
 
 
 clean:

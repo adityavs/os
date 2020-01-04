@@ -1,4 +1,3 @@
-SYSROOT?=../base
 TARGET:=build/kernel.bin
 
 AS:=nasm
@@ -35,15 +34,9 @@ clean:
 	rm -rf build/
 
 
-install: install-headers install-kernel
-
 install-headers:
 	@mkdir -p "$(SYSROOT)/include"
-	cp -R --preserve=timestamps "include/." "$(SYSROOT)/include/."
-
-install-kernel: $(TARGET)
-	@mkdir -p "$(SYSROOT)/.."
-	cp "$(TARGET)" "$(SYSROOT)/.."
+	cp -R --preserve=timestamps "include/." "$(SYSROOT)/include"
 
 
 -include $(OBJECTS:.o=.d)

@@ -1,4 +1,4 @@
-SYSROOT?=../base
+TARGET=build/libk.a
 
 AR=x86_64-elf-ar
 CC=x86_64-elf-gcc --sysroot=$(SYSROOT) -isystem=/include
@@ -6,22 +6,21 @@ CC=x86_64-elf-gcc --sysroot=$(SYSROOT) -isystem=/include
 CFLAGS=-ffreestanding -Wall -Wextra -mno-red-zone
 LIBK_CFLAGS=$(CFLAGS) -D__is_libk
 
-FREEOBJS=$(patsubst %, build/%.o,\
-	ctype.c \
-	stdio.c \
-	stdlib.c \
-	string.c \
+FREEOBJS=$(patsubst %,build/%.o,\
+	ctype.c\
+	stdio.c\
+	stdlib.c\
+	string.c\
 )
-HOSTEDOBJS=$(patsubst %, build/%.o, \
+HOSTEDOBJS=$(patsubst %,build/%.o,\
 )
 
 OBJS=$(FREEOBJS) $(HOSTEDOBJS)
 LIBK_OBJS=$(FREEOBJS:.o=.libk.o)
 
-TARGETS=build/libk.a
-
-
-all: $(TARGETS)
+all: $(TARGET)
+	@mkdir -p "$(SYSROOT)/lib"
+	cp $(TARGET) "$(SYSROOT)/lib"
 
 build/libc.a: $(OBJS)
 	@mkdir -p "$(@D)"
@@ -44,15 +43,9 @@ clean:
 	rm -rf build/
 
 
-install: install-headers install-libs
-
 install-headers:
 	@mkdir -p "$(SYSROOT)/include"
-	cp -R --preserve=timestamps "include/." "$(SYSROOT)/include/."
-
-install-libs: $(TARGETS)
-	@mkdir -p "$(SYSROOT)/lib"
-	cp $(TARGETS) "$(SYSROOT)/lib"
+	cp -R --preserve=timestamps "include/." "$(SYSROOT)/include"
 
 
 -include $(OBJS:.o=.d)

@@ -211,7 +211,6 @@ void* virtual_alloc(struct page_table *p4, uint64_t page_count) {
 		if (!virtual_is_used(p4, vaddr)) {
 			if (++length == page_count) {
 				virtual_alloc_to(p4, base, page_count);
-				printf("alloced 0x%x\n", base);
 				return (void*) vaddr;
 			}
 		} else {

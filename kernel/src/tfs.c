@@ -444,6 +444,7 @@ void tfs_print_node(int block, char *indent) {
 void tfs_print_child_node(int block, char *indent, bool last) {
 	printf("\033[90m%s", indent);
 	char *id = malloc(strlen(indent) + 3);
+	memset(id, 0, strlen(indent) + 3);
 	strcpy(id, indent);
 	if (last) {
 		printf("\\-");
