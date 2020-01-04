@@ -44,7 +44,10 @@ void frame_free(uint64_t, uint64_t);
 
 void virtual_map(struct page_table*, uint64_t, uint64_t, uint64_t);
 void virtual_map_2mib(struct page_table*, uint64_t, uint64_t, uint64_t);
+void virtual_map_1gib(struct page_table*, uint64_t, uint64_t, uint64_t);
 bool virtual_is_used(struct page_table*, uint64_t);
+void virtual_alloc_to(struct page_table*, uint64_t, uint64_t);
+void* virtual_alloc(struct page_table*, uint64_t);
 
 /*
  * Heap

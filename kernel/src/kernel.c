@@ -6,7 +6,6 @@
  * - maybe revisit interrupts not sure possibly
  * 
  * TODOs:
- * - heap
  * - virtual filesystem or other mechanism
  *   maybe only files for now, no need for devices
  *   hopefully I'll figure out a better way in the future
@@ -139,19 +138,16 @@ void debug_elf() {
 		return;
 	}
 
-//	char *buffer = (char*) malloc(node.size);
-	char buffer[1264] = { 0 };
-	tfs_read("/bin/hw", buffer, 1264);
+	char *buffer = (char*) malloc(node.size);
+	tfs_read("/bin/hw", buffer, node.size);
 
 	struct elf_header *ehdr = (struct elf_header*) buffer;
 	struct elf_program_header *phdr = (struct elf_program_header*) ((size_t) ehdr + ehdr->phoff);
 	for (size_t i = 0; i < ehdr->phnum; i++) {
 		struct elf_program_header *program = &phdr[i];
 		if (program->type == PT_LOAD) {
-			int pages = (program->memsz + PAGE_SIZE - 1) / PAGE_SIZE;
-			int paddr = frame_alloc(pages) * PAGE_SIZE;
-			virtual_map((struct page_table*) read_cr3(), program->vaddr, paddr, pages);
-			//debug_pages(read_cr3());
+			virtual_alloc_to((struct page_table*) read_cr3(), program->vaddr,
+					(program->memsz + PAGE_SIZE - 1) / PAGE_SIZE);
 			if (program->filesz)
 				memcpy((void*) program->vaddr, buffer, program->filesz);
 		}
@@ -161,7 +157,7 @@ void debug_elf() {
 	asm ("cli");
 	for (;;);
 
-//	free(buffer);
+	free(buffer);
 }
 
 void kernel_main() {
@@ -183,7 +179,7 @@ void kernel_main() {
 	// Files
 	ata_init();
 	tfs_init();
-//	debug_tfs();
+	debug_tfs();
 
 	debug_elf();
 

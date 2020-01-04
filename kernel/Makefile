@@ -6,7 +6,7 @@ CC:=x86_64-elf-gcc --sysroot=$(SYSROOT) -isystem=/include
 LD:=$(CC)
 
 ASFLAGS:=-felf64
-CFLAGS:=-Wall -Wextra -ffreestanding -mno-red-zone
+CFLAGS:=-Wall -Wextra -ffreestanding -mno-red-zone -O0
 LDFLAGS:=-Wall -Wextra -ffreestanding
 
 LINKER_SCRIPT:=src/linker.ld

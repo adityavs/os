@@ -19,7 +19,7 @@ struct time {
 
 void clock_init();
 void get_time(struct time*);
-void sleep();
+void sleep(uint64_t);
 uint64_t get_milliseconds();
 
 #endif

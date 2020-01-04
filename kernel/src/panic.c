@@ -10,5 +10,6 @@ void panic(const char *format, ...) {
 	vprintf(format, args);
 	va_end(args);
 
+	asm ("cli");
 	for (;;);
 }
