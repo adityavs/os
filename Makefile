@@ -1,37 +1,47 @@
-export SYSROOT=$(shell pwd)/build/sysroot
+MODULES:=kernel libc hw
 
-TARGET:=build/hdd.img
-PROJECTS=libc kernel program
+BUILDDIR:=build
+SYSROOT:=$(BUILDDIR)/sysroot
+BINDIR:=$(SYSROOT)/bin
+INCLUDEDIR:=$(SYSROOT)/include
+LIBDIR:=$(SYSROOT)/lib
 
-$(TARGET): all
-	@cp kernel/build/kernel.bin $(TARGET)
-	@truncate -s 64M $(TARGET)
-	@./mktfs $(TARGET) format
-	@mkdir -p mnt
-	@./tfsfuse mnt $(TARGET)
-	@-cp -r $(SYSROOT)/. mnt/
-	@fusermount -u mnt
-	@rmdir mnt
+AS:=nasm
+AR:=x86_64-elf-ar
+CC:=x86_64-elf-gcc --sysroot=$(SYSROOT) -isystem=/include
+LD:=x86_64-elf-gcc --sysroot=$(SYSROOT) -isystem=/include
 
-all: install-headers
-	@for PROJECT in $(PROJECTS); do\
-		printf "\033[1;37m$$PROJECT\033[0m\n";\
-		$(MAKE) -s -C $$PROJECT;\
-		echo "";\
+ASFLAGS:=-f elf64
+ARFLAGS:=
+CFLAGS:=-Wall -Wextra -ffreestanding -nostdlib
+LDFLAGS:=-nostdlib
+
+all: headers $(BUILDDIR)/hdd.img
+
+include $(patsubst %,%/module.mk,$(MODULES))
+
+$(BUILDDIR)/hdd.img: $(BUILDDIR)/kernel.bin $(BINDIR)/hw
+	@echo "PACK $@"
+	@cp $(BUILDDIR)/kernel.bin $@
+	@truncate -s 64M $@
+	@./mktfs $@ format
+	@mkdir -p .mnt
+	@./tfsfuse .mnt $@
+	@cp -r $(SYSROOT)/. .mnt/
+	@fusermount -u .mnt
+	@rmdir .mnt
+
+headers:
+	@mkdir -p $(INCLUDEDIR)
+	@for MODULE in $(MODULES); do\
+		if [[ -d "$$MODULE/include" ]]; then\
+			cp -au $$MODULE/include/. $(INCLUDEDIR);\
+		fi;\
 	done
 
-install-headers:
-	@for PROJECT in $(PROJECTS); do\
-		$(MAKE) -s -C $$PROJECT install-headers;\
-	done
-
-
-run: $(TARGET)
-	qemu-system-x86_64 -drive format=raw,file=$(TARGET)
-
+run: all
+	@echo "QEMU $(BUILDDIR)/hdd.img"
+	@qemu-system-x86_64 -drive format=raw,file=$(BUILDDIR)/hdd.img
 
 clean:
-	@for PROJECT in $(PROJECTS); do\
-		$(MAKE) -C $$PROJECT clean;\
-	done
-	rm -rf build/
+	rm -rf $(BUILDDIR)
