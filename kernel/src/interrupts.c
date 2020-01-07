@@ -5,6 +5,7 @@
 
 #include "kernel/io.h"
 #include "kernel/clock.h"
+#include "kernel/panic.h"
 #include "kernel/tty.h"
 
 struct idt_entry idt_entries[256] = { 0 };
@@ -25,7 +26,7 @@ void interrupts_init() {
 		idt_entries[i].base_low = base & 0xFFFF;
 		idt_entries[i].base_mid = (base >> 16) & 0xFFFF;
 		idt_entries[i].base_high = (base >> 32) & 0xFFFFFFFF;
-		idt_entries[i].selector = 0x08;
+		idt_entries[i].selector = 0x8;
 		idt_entries[i].flags = 0x8E;
 	}
 

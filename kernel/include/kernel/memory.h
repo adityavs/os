@@ -4,11 +4,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-void memory_init();
-
-/*
- * Paging
- */
 #define CMM_OFFSET 0x10000000000
 
 #define PAGE_SIZE 0x1000
@@ -21,7 +16,7 @@ struct page_table_entry {
 	uint64_t user_accessible : 1;
 	uint64_t write_through_caching : 1;
 	uint64_t disable_cache : 1;
-	uint64_t acessed : 1;
+	uint64_t accessed : 1;
 	uint64_t dirty : 1;
 	uint64_t huge : 1;
 	uint64_t global : 1;
@@ -35,26 +30,38 @@ struct page_table {
 	struct page_table_entry entry[512];
 } __attribute__ ((packed));
 
+void memory_init();
 
+/*
+ * Physical
+ */
 bool frame_bitmap_check(uint64_t, uint64_t);
 void frame_bitmap_set(uint64_t, uint64_t);
 void frame_bitmap_unset(uint64_t, uint64_t);
 uint64_t frame_alloc(uint64_t);
 void frame_free(uint64_t, uint64_t);
 
-void virtual_map(struct page_table*, uint64_t, uint64_t, uint64_t);
+/*
+ * Virtual
+ */
+inline static void virtual_set_p4(struct page_table *p4) {
+	asm ("movq %%rax, %%cr3" : : "a" ((uint64_t) p4));
+}
+
+void virtual_map(struct page_table*, uint64_t, uint64_t, uint64_t, int8_t);
 void virtual_map_2mib(struct page_table*, uint64_t, uint64_t, uint64_t);
 void virtual_map_1gib(struct page_table*, uint64_t, uint64_t, uint64_t);
 bool virtual_is_used(struct page_table*, uint64_t);
-void virtual_alloc_to(struct page_table*, uint64_t, uint64_t);
-void* virtual_alloc(struct page_table*, uint64_t);
+void virtual_alloc_to(struct page_table*, uint64_t, uint64_t, int8_t);
+void* virtual_alloc(struct page_table*, uint64_t, int8_t);
+struct page_table* virtual_new();
 
 /*
  * Heap
  */
 struct heap_node {
-	uint64_t free :  1;
 	uint64_t size : 63;
+	uint64_t free :  1;
 	struct heap_node* prev;
 	struct heap_node* next;
 } __attribute__ ((packed));
@@ -65,9 +72,14 @@ struct heap {
 	struct heap_node *head;
 };
 
-void heap_dump();
-void heap_init(uint64_t);
 void* heap_alloc(uint64_t);
 void heap_free(void*);
+
+/*
+ * Debug
+ */
+void print_mmap();
+void print_pages(uint64_t);
+void print_heap();
 
 #endif

@@ -1,6 +1,5 @@
 bits 16
 section .boot
-
 global boot
 boot:
 	; Setup stack
@@ -148,6 +147,10 @@ main16:
 	; Load the GDT
 	lgdt [gdt.descriptor]
 
+	; Load the TSS
+	mov ax, gdt.tss
+	ltr ax
+
 	; Long mode jump
 	jmp gdt.code:main64
 
@@ -212,9 +215,46 @@ gdt:
 	dq 0x00209A0000000000
 .data: equ $ - gdt
 	dq 0x0000920000000000
+.user_data: equ $ - gdt
+	dq 0x0000F20000000000
+.user_code: equ $ - gdt
+	dq 0x0020FA0000000000
+.tss: equ $ - gdt
+	dw tss.size & 0xFFFF
+	dw tss.base & 0xFFFF
+	db (tss.base >> 16) & 0xFF
+	db 0b11101001
+	db 0b00010000 | (tss.size >> 16) & 0xF
+	db (tss.base >> 24) & 0xFF
+	dd (tss.base >> 32) & 0xFFFFFFFF
+	dd 0
 .descriptor:
 	dw $ - gdt - 1
 	dd gdt
+
+; Task State Segment
+global tss
+tss:
+.base: equ tss - $$
+	dd 0		; reserved
+	dq 0		; rsp0
+	dq 0		; rsp1
+	dq 0		; rsp2
+	dd 0		; reserved
+	dd 0		; reserved
+	dq 0		; ist1
+	dq 0		; ist2
+	dq 0		; ist3
+	dq 0		; ist4
+	dq 0		; ist5
+	dq 0		; ist6
+	dq 0		; ist7
+	dd 0		; reserved
+	dd 0		; reserved
+	dw 0		; reserved
+	dw 0		; iopb offset
+.size: equ $ - tss
+
 
 ; Interrupt descriptor table
 idt:

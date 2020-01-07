@@ -1,6 +1,8 @@
 #ifndef _KERNEL_ELF_H
 #define _KERNEL_ELF_H 1
 
+#include "kernel/memory.h"
+
 #define EI_MAG0 0
 #define EI_MAG1 1
 #define EI_MAG2 2
@@ -40,5 +42,7 @@ struct elf_program_header {
 	uint64_t memsz;
 	uint64_t align;
 };
+
+uint64_t elf_load(struct page_table*, const char*);
 
 #endif

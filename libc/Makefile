@@ -1,41 +1,50 @@
-TARGET=build/libk.a
+TARGET:=build/libc.a build/libk.a
 
-AR=x86_64-elf-ar
-CC=x86_64-elf-gcc --sysroot=$(SYSROOT) -isystem=/include
+AS:=nasm
+CC:=x86_64-elf-gcc --sysroot=$(SYSROOT) -isystem=/include
+AR:=x86_64-elf-ar
 
-CFLAGS=-ffreestanding -Wall -Wextra -mno-red-zone
-LIBK_CFLAGS=$(CFLAGS) -D__is_libk
+ASFLAGS:=-f elf64
+CFLAGS:=-Wall -Wextra -ffreestanding -nostdlib -mno-red-zone
+LIBK_ASFLAGS:=$(ASFLAGS)
+LIBK_CFLAGS:=$(CFLAGS) -D__is_libk
 
-FREEOBJS=$(patsubst %,build/%.o,\
-	ctype.c\
-	stdio.c\
-	stdlib.c\
-	string.c\
-)
-HOSTEDOBJS=$(patsubst %,build/%.o,\
-)
-
-OBJS=$(FREEOBJS) $(HOSTEDOBJS)
-LIBK_OBJS=$(FREEOBJS:.o=.libk.o)
+SOURCES:=$(shell find src -type f \( -name "*.c" -or -name "*.s" \))
+OBJECTS:=$(patsubst src/%,build/%.o,$(SOURCES))
+LIBK_OBJECTS:=$(OBJECTS:.o=.libk.o)
 
 all: $(TARGET)
 	@mkdir -p "$(SYSROOT)/lib"
-	cp $(TARGET) "$(SYSROOT)/lib"
+	cp --preserve=timestamps $(TARGET) "$(SYSROOT)/lib"
 
-build/libc.a: $(OBJS)
+build/libc.a: $(OBJECTS)
 	@mkdir -p "$(@D)"
-	$(AR) rcs $@ $(OBJS)
+	echo "AR $@"
+	$(AR) rcs $@ $(OBJECTS)
 
-build/libk.a: $(LIBK_OBJS)
+build/libk.a: $(LIBK_OBJECTS)
 	@mkdir -p "$(@D)"
-	$(AR) rcs $@ $(LIBK_OBJS)
+	echo "AR $@"
+	$(AR) rcs $@ $(LIBK_OBJECTS)
+
+build/%.s.o: src/%.s
+	@mkdir -p "$(@D)"
+	echo "AS $@"
+	$(AS) $(ASFLAGS) -o $@ $<
 
 build/%.c.o: src/%.c
 	@mkdir -p "$(@D)"
+	echo "CC $@"
 	$(CC) $(CFLAGS) -MD -c -o $@ $<
+
+build/%.s.libk.o: src/%.s
+	@mkdir -p "$(@D)"
+	echo "AS $@"
+	$(AS) $(LIBK_ASFLAGS) -o $@ $<
 
 build/%.c.libk.o: src/%.c
 	@mkdir -p "$(@D)"
+	echo "CC $@"
 	$(CC) $(LIBK_CFLAGS) -MD -c -o $@ $<
 
 
@@ -48,5 +57,5 @@ install-headers:
 	cp -R --preserve=timestamps "include/." "$(SYSROOT)/include"
 
 
--include $(OBJS:.o=.d)
--include $(LIBK_OBJS:.o=.d)
+-include $(OBJECTS:.o=.d)
+-include $(LIBK_OBJECTS:.o=.d)

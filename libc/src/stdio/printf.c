@@ -4,10 +4,7 @@
 #include <stdint.h>
 
 #include "ctype.h"
-
-#if defined(__is_libk)
-#include <kernel/tty.h>
-#endif
+#include "string.h"
 
 static char* itoa(uint64_t i, int base, int pad, char padchar) {
 	static const char* rep = "0123456789ABCDEF";
@@ -113,16 +110,4 @@ int vsprintf(char *buffer, const char *format, va_list args) {
 
 	buffer[written] = 0;
 	return written;
-}
-
-int putchar(int c) {
-#if defined(__is_libk)
-	return tty_putchar(c);
-#endif
-}
-
-int puts(const char *s) {
-#if defined(__is_libk)
-	return tty_puts(s);
-#endif
 }

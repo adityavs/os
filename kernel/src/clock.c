@@ -45,8 +45,8 @@ void get_time(struct time *time) {
 	time->year = BCD_TO_INT(get_register(9));
 }
 
-void sleep(uint64_t milliseconds) {
-	sleep_timer = milliseconds;
+void sleep(uint64_t ms) {
+	sleep_timer = ms;
 	while (sleep_timer > 0);
 }
 
