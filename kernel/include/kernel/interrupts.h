@@ -11,12 +11,12 @@ struct idt_entry {
 	uint16_t base_mid;
 	uint32_t base_high;
 	uint32_t zero;
-} __attribute__((packed));
+} __attribute__ ((packed));
 
 struct idt_descriptor {
 	uint16_t limit;
 	uint64_t base;
-} __attribute__((packed));
+} __attribute__ ((packed));
 
 struct isr_stack {
 	uint64_t cr0, cr2, cr3, cr4;
@@ -24,7 +24,7 @@ struct isr_stack {
 	uint64_t rax, rbx, rcx, rdx;
 	uint64_t interrupt, error_code;
 	uint64_t rip, cs, flags, rsp, ss;
-} __attribute ((packed));
+} __attribute__ ((packed));
 
 typedef void isr_handler_t(struct isr_stack);
 

@@ -28,7 +28,7 @@ struct page_table_entry {
 
 struct page_table {
 	struct page_table_entry entry[512];
-} __attribute__ ((packed));
+};
 
 void memory_init();
 
@@ -44,10 +44,6 @@ void frame_free(uint64_t, uint64_t);
 /*
  * Virtual
  */
-inline static void virtual_set_p4(struct page_table *p4) {
-	asm ("movq %%rax, %%cr3" : : "a" ((uint64_t) p4));
-}
-
 void virtual_map(struct page_table*, uint64_t, uint64_t, uint64_t, int8_t);
 void virtual_map_2mib(struct page_table*, uint64_t, uint64_t, uint64_t);
 void virtual_map_1gib(struct page_table*, uint64_t, uint64_t, uint64_t);

@@ -1,22 +1,41 @@
 #include <stdint.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "kernel/ata.h"
-#include "kernel/bootinfo.h"
 #include "kernel/clock.h"
+#include "kernel/cpu.h"
 #include "kernel/elf.h"
 #include "kernel/interrupts.h"
-#include "kernel/io.h"
 #include "kernel/memory.h"
-#include "kernel/panic.h"
-#include "kernel/pci.h"
 #include "kernel/syscall.h"
+#include "kernel/task.h"
 #include "kernel/tfs.h"
 #include "kernel/tty.h"
 #include "kernel/vga.h"
+
+void task1_main() {
+	sysret(get_rsp(), elf_load((struct page_table*) get_cr3(), "/bin/prog1"));
+}
+
+void task2_main() {
+	sysret(get_rsp(), elf_load((struct page_table*) get_cr3(), "/bin/prog2"));
+}	
+
+void task_new(void *func) {
+	struct task *task = (struct task*) malloc(sizeof(struct task));
+	task->page_map = virtual_new();
+	task->kernel_stack = virtual_alloc(task->page_map, 1, 0) + PAGE_SIZE;
+	task->user_stack = virtual_alloc(task->page_map, 1, 1) + PAGE_SIZE;
+	uint64_t prev_cr3 = get_cr3();
+	set_cr3((uint64_t) task->page_map);
+	*((uint64_t*) (task->user_stack -= 8)) = (uint64_t) func;	// rip
+	*((uint64_t*) (task->user_stack -= 8)) = (uint64_t) 0;		// rbp
+	*((uint64_t*) (task->user_stack -= 8)) = (uint64_t) 0;		// rflags
+	set_cr3(prev_cr3);
+	task_add(task);
+}
 
 void kernel_main() {
 	// Video
@@ -36,25 +55,14 @@ void kernel_main() {
 
 	// Userspace
 	syscall_init();
+	task_init();
 
-	// This code is really ugly and still needs a lot of refactoring
-	// But I'm gonna take a small break from this project so I decided
-	// to push these changes as-is. I still need to create some process
-	// structs and a scheduler. Also fix interrupts in usermode.
-	struct page_table *p4 = virtual_new();
-	uint64_t entry = elf_load(p4, "/bin/hw");
-	uint64_t user_stack = (uint64_t) virtual_alloc(p4, 4, 1) + PAGE_SIZE * 4;
-	uint64_t kernel_stack = (uint64_t) virtual_alloc(p4, 1, 0) + PAGE_SIZE * 1;
+	// More ugly code. But this time we got a _very_ basic
+	// scheduler. Also very simple cooperative multitasking
+	task_new(&task1_main);
+	task_new(&task2_main);
 
-	virtual_set_p4(p4);
-	extern uint32_t tss;
-	(&tss)[1] = kernel_stack & 0xFFFFFFFF;
-	(&tss)[2] = kernel_stack >> 32;
-	asm ("mov %0, %%rsp" : : "r" (user_stack));
-	asm ("rex.w sysret" : : "c" (entry));
-
-	// Legacy code
-	printf("\033[97m* \033[0mHalting system.");
-	asm ("cli");
-	for (;;);
+	// Idle kernel
+	for (int i = 0; 1; i++)
+		task_reschedule();
 }

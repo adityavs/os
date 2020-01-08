@@ -22,11 +22,6 @@ enum vga_color {
 	VGA_BRIGHT_WHITE,
 };
 
-struct vga_palette_entry {
-	uint8_t index;
-	uint8_t red, green, blue;
-} __attribute__ ((packed));
-
 void vga_init();
 
 #endif

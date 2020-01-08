@@ -3,11 +3,16 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#include "kernel/io.h"
+#include "kernel/cpu.h"
 #include "kernel/panic.h"
+#include "kernel/task.h"
 #include "kernel/tty.h"
 
 uint64_t syscall_handlers[256] = { 0 };
+
+void sys_yield() {
+	task_reschedule();
+}
 
 void sys_clear() {
 	tty_clear();
@@ -35,4 +40,5 @@ void syscall_init() {
 	syscall_handlers[1] = (uint64_t) &sys_cursor_update;
 	syscall_handlers[2] = (uint64_t) &sys_putchar;
 	syscall_handlers[3] = (uint64_t) &sys_puts;
+	syscall_handlers[4] = (uint64_t) &sys_yield;
 }

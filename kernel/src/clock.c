@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 #include "kernel/interrupts.h"
-#include "kernel/io.h"
+#include "kernel/cpu.h"
 
 volatile uint64_t sleep_timer = 0;
 volatile uint64_t milliseconds = 0;
@@ -18,7 +18,7 @@ void pit_callback(struct isr_stack s) {
 
 void clock_init() {
 	interrupts_set_handler(32, &pit_callback);
-	uint64_t divisor = 1193; // 1193180Hz^2 / 1000Hz;
+	uint16_t divisor = 1193; // 1193180Hz^2 / 1000Hz;
 	out8(0x43, 0x36);
 	out8(0x40, (uint8_t) (divisor & 0xFF));
 	out8(0x40, (uint8_t) ((divisor >> 8) & 0xFF));

@@ -1,4 +1,5 @@
-MODULES:=kernel libc hw
+USERLAND:=prog1 prog2
+MODULES:=kernel libc $(USERLAND)
 
 BUILDDIR:=build
 SYSROOT:=$(BUILDDIR)/sysroot
@@ -20,7 +21,7 @@ all: headers $(BUILDDIR)/hdd.img
 
 include $(patsubst %,%/module.mk,$(MODULES))
 
-$(BUILDDIR)/hdd.img: $(BUILDDIR)/kernel.bin $(BINDIR)/hw
+$(BUILDDIR)/hdd.img: $(BUILDDIR)/kernel.bin $(addprefix $(BINDIR)/,$(USERLAND))
 	@echo "PACK $@"
 	@cp $(BUILDDIR)/kernel.bin $@
 	@truncate -s 64M $@

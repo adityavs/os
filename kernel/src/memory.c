@@ -4,7 +4,7 @@
 #include <string.h>
 
 #include "kernel/bootinfo.h"
-#include "kernel/io.h"
+#include "kernel/cpu.h"
 #include "kernel/panic.h"
 
 void physical_init(uint64_t);
@@ -99,7 +99,7 @@ void virtual_init(uint64_t total_memory) {
 	virtual_map(kernel_p4, 0, 0, (uint64_t) kernel_p4 / PAGE_SIZE, 0);
 
 	// Move kernel's P4 address to cr3
-	virtual_set_p4(kernel_p4);
+	set_cr3((uint64_t) kernel_p4);
 	page_offset = CMM_OFFSET;
 }
 
@@ -245,11 +245,52 @@ void* virtual_alloc(struct page_table *p4, uint64_t page_count, int8_t user) {
 }
 
 struct page_table* virtual_new() {
-	struct page_table *new_p4 = (struct page_table*) (frame_alloc(1) * PAGE_SIZE);
-	memcpy((void*) (uint64_t) new_p4 + page_offset,
-			(void*) (uint64_t) kernel_p4 + page_offset,
-			PAGE_SIZE);
-	return new_p4;
+	struct page_table *ret = (struct page_table*) (frame_alloc(1) * PAGE_SIZE);
+
+	struct page_table *p4 = (struct page_table*) (page_offset + (uint64_t) kernel_p4);
+	struct page_table *new_p4 = (struct page_table*) (page_offset + (uint64_t) ret);
+	for (int p4i = 0; p4i < 512; p4i++) {
+		struct page_table_entry *p4e = &p4->entry[p4i];
+		if (!p4e->present) continue;
+		struct page_table_entry *new_p4e = &new_p4->entry[p4i];
+		memcpy(new_p4e, p4e, sizeof(struct page_table_entry));
+		new_p4e->frame = frame_alloc(1);
+		memset((void*) (uint64_t) (page_offset + (new_p4e->frame * PAGE_SIZE)), 0, PAGE_SIZE);
+
+		struct page_table *p3 = (struct page_table*) (page_offset + p4e->frame * PAGE_SIZE);
+		struct page_table *new_p3 = (struct page_table*) (page_offset + new_p4e->frame * PAGE_SIZE);
+		for (int p3i = 0; p3i < 512; p3i++) {
+			struct page_table_entry *p3e = &p3->entry[p3i];
+			if (!p3e->present) continue;
+			struct page_table_entry *new_p3e = &new_p3->entry[p3i];
+			memcpy(new_p3e, p3e, sizeof(struct page_table_entry));
+			if (p3e->huge) continue;
+			new_p3e->frame = frame_alloc(1);
+			memset((void*) (uint64_t) (page_offset + (new_p3e->frame * PAGE_SIZE)), 0, PAGE_SIZE);
+
+			struct page_table *p2 = (struct page_table*) (page_offset + p3e->frame * PAGE_SIZE);
+			struct page_table *new_p2 = (struct page_table*) (page_offset + new_p3e->frame * PAGE_SIZE);
+			for (int p2i = 0; p2i < 512; p2i++) {
+				struct page_table_entry *p2e = &p2->entry[p2i];
+				if (!p2e->present) continue;
+				struct page_table_entry *new_p2e = &new_p2->entry[p2i];
+				memcpy(new_p2e, p2e, sizeof(struct page_table_entry));
+				if (p2e->huge) continue;
+				new_p2e->frame = frame_alloc(1);
+				memset((void*) (uint64_t) (page_offset + (new_p2e->frame * PAGE_SIZE)), 0, PAGE_SIZE);
+
+				struct page_table *p1 = (struct page_table*) (page_offset + p2e->frame * PAGE_SIZE);
+				struct page_table *new_p1 = (struct page_table*) (page_offset + new_p2e->frame * PAGE_SIZE);
+				for (int p1i = 0; p1i < 512; p1i++) {
+					struct page_table_entry *p1e = &p1->entry[p1i];
+					if (!p1e->present) continue;
+					struct page_table_entry *new_p1e = &new_p1->entry[p1i];
+					memcpy(new_p1e, p1e, sizeof(struct page_table_entry));
+				}
+			}
+		}
+	}
+	return ret;
 }
 
 /*

@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "kernel/io.h"
 #include "kernel/clock.h"
+#include "kernel/cpu.h"
 #include "kernel/panic.h"
 #include "kernel/tty.h"
 
@@ -17,7 +17,7 @@ void interrupts_init() {
 	// Setup descriptor
 	idt_descriptor.limit = (uint16_t) (256 * sizeof(struct idt_entry));
 	idt_descriptor.base = (uint64_t) &idt_entries;
-	__asm__ ("lidt %0" : : "m"(idt_descriptor));
+	asm volatile ("lidt %0" : : "m" (idt_descriptor));
 
 	// Interrupt Service Routines
 	extern void *isr_vector;

@@ -1,19 +1,19 @@
-#ifndef _KERNEL_IO_H
-#define _KERNEL_IO_H 1
+#ifndef _KERNEL_CPU_H
+#define _KERNEL_CPU_H 1
 
 /*
  * Output
  */
-static inline void out8(uint16_t port, uint8_t val) {
-	asm volatile ("outb %0, %1" : : "a" (val), "Nd" (port));
+static inline void out8(uint16_t port, uint8_t data) {
+	asm volatile ("outb %0, %1" : : "a" (data), "Nd" (port));
 }
 
-static inline void out16(uint16_t port, uint16_t val) {
-	asm volatile ("outw %0, %1" : : "a" (val), "Nd" (port));
+static inline void out16(uint16_t port, uint16_t data) {
+	asm volatile ("outw %0, %1" : : "a" (data), "Nd" (port));
 }
 
-static inline void out32(uint16_t port, uint32_t val) {
-	asm volatile ("outl %0, %1" : : "a" (val), "Nd" (port));
+static inline void out32(uint16_t port, uint32_t data) {
+	asm volatile ("outl %0, %1" : : "a" (data), "Nd" (port));
 }
 
 static inline void outs32(uint16_t port, uint64_t buffer, uint32_t count) {
@@ -46,12 +46,29 @@ static inline void ins32(uint16_t port, uint64_t buffer, uint32_t count) {
 }
 
 /*
+ * Helpers
+ */
+static inline void sysret(uint64_t rsp, uint64_t rcx) {
+	asm volatile ("mov %0, %%rsp; rex.w sysret" : : "r" (rsp), "c" (rcx));
+}
+
+/*
  * Registers
  */
-static inline uint64_t read_cr3() {
-	uint64_t ret;
-	asm volatile ("movq %%cr3, %0" : "=r" (ret));
-	return ret;
+static inline void set_cr3(uint64_t cr3) {
+	asm volatile ("mov %0, %%cr3" : : "r" (cr3));
+}
+
+static inline uint64_t get_cr3() {
+	uint64_t cr3;
+	asm volatile ("mov %%cr3, %0" : "=r" (cr3));
+	return cr3;
+}
+
+static inline uint64_t get_rsp() {
+	uint64_t rsp;
+	asm volatile ("mov %%rsp, %0" : "=r" (rsp));
+	return rsp;
 }
 
 /*

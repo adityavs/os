@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 
-#include "kernel/io.h"
+#include "kernel/cpu.h"
 #include "kernel/panic.h"
 
 uint32_t pci_read_field(uint32_t device, uint8_t field, uint8_t size) {

@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 #include "kernel/clock.h"
-#include "kernel/io.h"
+#include "kernel/cpu.h"
 #include "kernel/panic.h"
 #include "kernel/pci.h"
 

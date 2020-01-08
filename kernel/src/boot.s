@@ -122,7 +122,7 @@ main16:
 	out 0x21, al
 
 	; Load a zero length IDT so that any NMI causes a triple fault
-	lidt [idt]
+	lidt [idt.descriptor]
 
 	; Enter long mode
 	; set PAE and PGE bits
@@ -209,6 +209,7 @@ get_mmap:
 	.msg db "Error mapping memory.", 0
 
 ; Global descriptor table
+align 8
 gdt:
 	dq 0x0000000000000000
 .code: equ $ - gdt
@@ -233,6 +234,7 @@ gdt:
 	dd gdt
 
 ; Task State Segment
+align 8
 global tss
 tss:
 .base: equ tss - $$
@@ -257,10 +259,11 @@ tss:
 
 
 ; Interrupt descriptor table
+align 8
 idt:
-.length	dw 0
-.base	dd 0
-
+.descriptor:
+	dw 0
+	dd 0
 
 ; Long mode code
 bits 64

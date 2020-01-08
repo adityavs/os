@@ -15,3 +15,7 @@ int sys_putchar(int c) {
 int sys_puts(const char *s) {
 	return syscall(SYS_PUTS, (int64_t) s, 0, 0, 0, 0, 0);
 }
+
+void sys_yield() {
+	syscall(SYS_YIELD, 0, 0, 0, 0, 0, 0);
+}

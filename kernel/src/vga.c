@@ -1,8 +1,11 @@
 #include "kernel/vga.h"
 
-#include "kernel/io.h"
+#include "kernel/cpu.h"
 
-struct vga_palette_entry palette[16] = {
+struct vga_palette_entry {
+	uint8_t index;
+	uint8_t red, green, blue;
+} palette[16] = {
 	{ 0x00,  1,  1,  1 }, // Black
 	{ 0x01, 32,  1,  1 }, // Red
 	{ 0x02,  1, 32,  1 }, // Green
