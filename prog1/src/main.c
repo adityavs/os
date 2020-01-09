@@ -2,8 +2,6 @@
 #include <unistd.h>
 
 void main() {
-	for (;;) {
-		printf("Hi!\n");
-		sys_yield();
-	}
+	printf("Hello, World!\n");
+	sys_exit();
 }

@@ -44,13 +44,17 @@ void frame_free(uint64_t, uint64_t);
 /*
  * Virtual
  */
-void virtual_map(struct page_table*, uint64_t, uint64_t, uint64_t, int8_t);
-void virtual_map_2mib(struct page_table*, uint64_t, uint64_t, uint64_t);
-void virtual_map_1gib(struct page_table*, uint64_t, uint64_t, uint64_t);
 bool virtual_is_used(struct page_table*, uint64_t);
-void virtual_alloc_to(struct page_table*, uint64_t, uint64_t, int8_t);
-void* virtual_alloc(struct page_table*, uint64_t, int8_t);
+
+void virtual_map(struct page_table*, uint64_t, uint64_t, int, bool);
+void virtual_map_2mib(struct page_table*, uint64_t, uint64_t, int, bool);
+
+void virtual_alloc_to(struct page_table*, uint64_t, int, bool);
+void* virtual_alloc(struct page_table*, int, bool);
+void virtual_free(struct page_table*, void*, int);
+
 struct page_table* virtual_new();
+void virtual_delete(struct page_table*);
 
 /*
  * Heap

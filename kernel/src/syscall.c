@@ -10,24 +10,28 @@
 
 uint64_t syscall_handlers[256] = { 0 };
 
-void sys_yield() {
-	task_reschedule();
-}
-
-void sys_clear() {
+void sys_clear_handler() {
 	tty_clear();
 }
 
-void sys_cursor_update() {
+void sys_update_cursor_handler() {
 	tty_cursor_update();
 }
 
-int sys_putchar(int c) {
+int sys_putchar_handler(int c) {
 	return tty_putchar(c);
 }
 
-int sys_puts(const char *s) {
+int sys_puts_handler(const char *s) {
 	return tty_puts(s);
+}
+
+void sys_yield_handler() {
+	task_switch(true);
+}
+
+void sys_exit_handler() {
+	task_switch(false);
 }
 
 void syscall_init() {
@@ -36,9 +40,10 @@ void syscall_init() {
 	wrmsr(MSR_LSTAR, (uint64_t) &syscall_handler);
 	wrmsr(MSR_SFMASK, 0);
 
-	syscall_handlers[0] = (uint64_t) &sys_clear;
-	syscall_handlers[1] = (uint64_t) &sys_cursor_update;
-	syscall_handlers[2] = (uint64_t) &sys_putchar;
-	syscall_handlers[3] = (uint64_t) &sys_puts;
-	syscall_handlers[4] = (uint64_t) &sys_yield;
+	syscall_handlers[SYS_CLEAR] = (uint64_t) &sys_clear_handler;
+	syscall_handlers[SYS_UPDATE_CURSOR] = (uint64_t) &sys_update_cursor_handler;
+	syscall_handlers[SYS_PUTCHAR] = (uint64_t) &sys_putchar_handler;
+	syscall_handlers[SYS_PUTS] = (uint64_t) &sys_puts_handler;
+	syscall_handlers[SYS_YIELD] = (uint64_t) &sys_yield_handler;
+	syscall_handlers[SYS_EXIT] = (uint64_t) &sys_exit_handler;
 }

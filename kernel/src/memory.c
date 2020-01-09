@@ -79,10 +79,10 @@ void frame_free(uint64_t index, uint64_t length) {
 /*
  * Virtual
  */
-#define P4_INDEX(vaddr) (((vaddr) >> 39) & 0x1FF)
-#define P3_INDEX(vaddr) (((vaddr) >> 30) & 0x1FF)
-#define P2_INDEX(vaddr) (((vaddr) >> 21) & 0x1FF)
-#define P1_INDEX(vaddr) (((vaddr) >> 12) & 0x1FF)
+#define P4_INDEX(vaddr) (((uint64_t) (vaddr) >> 39) & 0x1FF)
+#define P3_INDEX(vaddr) (((uint64_t) (vaddr) >> 30) & 0x1FF)
+#define P2_INDEX(vaddr) (((uint64_t) (vaddr) >> 21) & 0x1FF)
+#define P1_INDEX(vaddr) (((uint64_t) (vaddr) >> 12) & 0x1FF)
 
 struct page_table *kernel_p4;
 uint64_t page_offset = 0;
@@ -93,7 +93,7 @@ void virtual_init(uint64_t total_memory) {
 	memset(kernel_p4, 0, PAGE_SIZE);
 
 	// Map the complete physical space to +1TiB because why the fuck not
-	virtual_map_2mib(kernel_p4, CMM_OFFSET, 0, total_memory / PAGE_SIZE_2MIB);
+	virtual_map_2mib(kernel_p4, CMM_OFFSET, 0, total_memory / PAGE_SIZE_2MIB, 0);
 
 	// Identity map from 0 to what we've used
 	virtual_map(kernel_p4, 0, 0, (uint64_t) kernel_p4 / PAGE_SIZE, 0);
@@ -103,9 +103,29 @@ void virtual_init(uint64_t total_memory) {
 	page_offset = CMM_OFFSET;
 }
 
-void virtual_map(struct page_table *p4, uint64_t vaddr, uint64_t paddr, uint64_t page_count,
-		int8_t user) {
-	for (uint64_t page = 0; page < page_count; page++) {
+bool virtual_is_used(struct page_table *p4, uint64_t vaddr) {
+	struct page_table_entry *p4e = &((struct page_table*) ((uint64_t) p4 + page_offset))->entry[P4_INDEX(vaddr)];
+	if (!p4e->present)
+		return false;
+	struct page_table *p3 = (struct page_table*) (uint64_t) (page_offset + (p4e->frame * PAGE_SIZE));
+	struct page_table_entry *p3e = &p3->entry[P3_INDEX(vaddr)];
+	if (!p3e->present)
+		return false;
+	if (p3e->huge)
+		return true;
+	struct page_table *p2 = (struct page_table*) (uint64_t) (page_offset + (p3e->frame * PAGE_SIZE));
+	struct page_table_entry *p2e = &p2->entry[P2_INDEX(vaddr)];
+	if (!p2e->present)
+		return false;
+	if (p2e->huge)
+		return true;
+	struct page_table *p1 = (struct page_table*) (uint64_t) (page_offset + (p2e->frame * PAGE_SIZE));
+	struct page_table_entry *p1e = &p1->entry[P1_INDEX(vaddr)];
+	return p1e->present;
+}
+
+void virtual_map(struct page_table *p4, uint64_t vaddr, uint64_t paddr, int page_count, bool user) {
+	for (int page = 0; page < page_count; page++) {
 		struct page_table_entry *p4e = &((struct page_table*)
 				((uint64_t) p4 + page_offset))->entry[P4_INDEX(vaddr)];
 		if (!p4e->present) {
@@ -152,12 +172,13 @@ void virtual_map(struct page_table *p4, uint64_t vaddr, uint64_t paddr, uint64_t
 	}
 }
 
-void virtual_map_2mib(struct page_table *p4, uint64_t vaddr, uint64_t paddr, uint64_t count) {
-	for (uint64_t page = 0; page < count; page++) {
+void virtual_map_2mib(struct page_table *p4, uint64_t vaddr, uint64_t paddr, int page_count, bool user) {
+	for (int page = 0; page < page_count; page++) {
 		struct page_table_entry *p4e = &p4->entry[P4_INDEX(vaddr)];
 		if (!p4e->present) {
 			p4e->present = 1;
 			p4e->writable = 1;
+			p4e->user_accessible = user;
 			p4e->frame = frame_alloc(1);
 			memset((void*) (uint64_t) (p4e->frame * PAGE_SIZE), 0, PAGE_SIZE);
 		}
@@ -166,6 +187,7 @@ void virtual_map_2mib(struct page_table *p4, uint64_t vaddr, uint64_t paddr, uin
 		if (!p3e->present) {
 			p3e->present = 1;
 			p3e->writable = 1;
+			p3e->user_accessible = user;
 			p3e->frame = frame_alloc(1);
 			memset((void*) (uint64_t) (p3e->frame * PAGE_SIZE), 0, PAGE_SIZE);
 		}
@@ -174,6 +196,7 @@ void virtual_map_2mib(struct page_table *p4, uint64_t vaddr, uint64_t paddr, uin
 		if (!p2e->present) {
 			p2e->present = 1;
 			p2e->writable = 1;
+			p2e->user_accessible = user;
 			p2e->huge = 1;
 			p2e->frame = paddr / PAGE_SIZE;
 		}
@@ -182,54 +205,14 @@ void virtual_map_2mib(struct page_table *p4, uint64_t vaddr, uint64_t paddr, uin
 	}
 }
 
-void virtual_map_1gib(struct page_table *p4, uint64_t vaddr, uint64_t paddr, uint64_t count) {
-	for (uint64_t page = 0; page < count; page++) {
-		struct page_table_entry *p4e = &p4->entry[P4_INDEX(vaddr)];
-		if (!p4e->present) {
-			p4e->present = 1;
-			p4e->writable = 1;
-			p4e->frame = frame_alloc(1);
-			memset((void*) (uint64_t) (p4e->frame * PAGE_SIZE), 0, PAGE_SIZE);
-		}
-		struct page_table *p3 = (struct page_table*) (uint64_t) (p4e->frame * PAGE_SIZE);
-		struct page_table_entry *p3e = &p3->entry[P3_INDEX(vaddr)];
-		if (!p3e->present) {
-			p3e->present = 1;
-			p3e->writable = 1;
-			p3e->huge = 1;
-			p3e->frame = paddr / PAGE_SIZE;
-		}
-		vaddr += PAGE_SIZE_1GIB;
-		paddr += PAGE_SIZE_1GIB;
-	}
-}
-
-bool virtual_is_used(struct page_table *p4, uint64_t vaddr) {
-	struct page_table_entry *p4e = &((struct page_table*)
-			((uint64_t) p4 + page_offset))->entry[P4_INDEX(vaddr)];
-	if (!p4e->present) return false;
-	struct page_table *p3 = (struct page_table*) (uint64_t)
-		(page_offset + (p4e->frame * PAGE_SIZE));
-	struct page_table_entry *p3e = &p3->entry[P3_INDEX(vaddr)];
-	if (!p3e->present) return false;
-	struct page_table *p2 = (struct page_table*) (uint64_t)
-		(page_offset + (p3e->frame * PAGE_SIZE));
-	struct page_table_entry *p2e = &p2->entry[P2_INDEX(vaddr)];
-	if (!p2e->present) return false;
-	struct page_table *p1 = (struct page_table*) (uint64_t)
-		(page_offset + (p2e->frame * PAGE_SIZE));
-	struct page_table_entry *p1e = &p1->entry[P1_INDEX(vaddr)];
-	return p1e->present;
-}
-
-void virtual_alloc_to(struct page_table *p4, uint64_t vaddr, uint64_t page_count,
-		int8_t user) {
-	for (uint64_t page = 0; page < page_count; page++)
+void virtual_alloc_to(struct page_table *p4, uint64_t vaddr, int page_count, bool user) {
+	for (int page = 0; page < page_count; page++)
 		virtual_map(p4, vaddr + PAGE_SIZE * page, frame_alloc(1) * PAGE_SIZE, 1, user);
 }
 
-void* virtual_alloc(struct page_table *p4, uint64_t page_count, int8_t user) {
-	uint64_t base = 0, length = 0;
+void* virtual_alloc(struct page_table *p4, int page_count, bool user) {
+	uint64_t base = 0;
+	int length = 0;
 	for (uint64_t vaddr = 0; vaddr < CMM_OFFSET; vaddr += PAGE_SIZE) {
 		if (!virtual_is_used(p4, vaddr)) {
 			if (++length == page_count) {
@@ -242,6 +225,57 @@ void* virtual_alloc(struct page_table *p4, uint64_t page_count, int8_t user) {
 		}
 	}
 	return NULL;
+}
+
+bool virtual_check_empty(struct page_table *parent, struct page_table *table, int index) {
+	for (int i = 0; i < 512; i++)
+		if (table->entry[i].present)
+			return false;
+	parent->entry[index].present = false;
+	frame_free(parent->entry[index].frame, 1);
+	return true;
+}
+void virtual_free(struct page_table *p4, void* vaddr, int page_count) {
+	p4 = (struct page_table*) ((uint64_t) p4 + page_offset);
+	for (int page = 0; page < page_count; page++) {
+		struct page_table_entry *p4e = &p4->entry[P4_INDEX(vaddr)];
+		if (!p4e->present)
+			return;
+		struct page_table *p3 = (struct page_table*) (uint64_t) (page_offset + (p4e->frame * PAGE_SIZE));
+		struct page_table_entry *p3e = &p3->entry[P3_INDEX(vaddr)];
+		if (!p3e->present)
+			return;
+		if (p3e->huge) {
+			p3e->present = 0;
+			frame_free(p3e->frame, 512 * 512);
+			virtual_check_empty(p4, p3, P3_INDEX(vaddr));
+			vaddr += PAGE_SIZE_1GIB;
+			continue;
+		}
+		struct page_table *p2 = (struct page_table*) (uint64_t) (page_offset + (p3e->frame * PAGE_SIZE));
+		struct page_table_entry *p2e = &p2->entry[P2_INDEX(vaddr)];
+		if (!p2e->present)
+			return;
+		if (p2e->huge) {
+			p2e->present = 0;
+			frame_free(p2e->frame, 512);
+			if (virtual_check_empty(p3, p2, P2_INDEX(vaddr)))
+				virtual_check_empty(p4, p3, P3_INDEX(vaddr));
+			vaddr += PAGE_SIZE_2MIB;
+			continue;
+		}
+		struct page_table *p1 = (struct page_table*) (uint64_t) (page_offset + (p2e->frame * PAGE_SIZE));
+		struct page_table_entry *p1e = &p1->entry[P1_INDEX(vaddr)];
+		if (!p1e->present)
+			return;
+
+		p1e->present = 0;
+		frame_free(p1e->frame, 1);
+		if (virtual_check_empty(p2, p1, P1_INDEX(vaddr)))
+			if (virtual_check_empty(p3, p2, P2_INDEX(vaddr)))
+				virtual_check_empty(p4, p3, P3_INDEX(vaddr));
+		vaddr += PAGE_SIZE;
+	}
 }
 
 struct page_table* virtual_new() {
@@ -291,6 +325,10 @@ struct page_table* virtual_new() {
 		}
 	}
 	return ret;
+}
+
+void virtual_delete(struct page_table *p4) {
+	frame_free((uint64_t) p4 / PAGE_SIZE, 1);
 }
 
 /*

@@ -2,8 +2,8 @@
 #include <unistd.h>
 
 void main() {
-	for (;;) {
-		printf("Hello!\n");
-		sys_yield();
-	}
+	printf("Second program!\n");
+	sys_yield();
+	printf("Runs in two parts!\n");
+	sys_exit();
 }
