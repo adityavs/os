@@ -50,9 +50,9 @@ void task_delete(struct task* task) {
 	if (task->page_map != NULL) {
 		if (task->user_stack != NULL)
 			virtual_free(task->page_map, task->user_stack - PAGE_SIZE, 1);
-		//if (task->kernel_stack != NULL)
-			//virtual_free(task->page_map, task->kernel_stack - PAGE_SIZE, 1);
-		//virtual_delete(task->page_map);
+		if (task->kernel_stack != NULL)
+			virtual_free(task->page_map, task->kernel_stack - PAGE_SIZE, 1);
+		virtual_delete(task->page_map);
 	}
 	if (task != NULL)
 		free(task);
