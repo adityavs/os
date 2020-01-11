@@ -49,7 +49,7 @@ static inline void ins32(uint16_t port, uint64_t buffer, uint32_t count) {
  * Helpers
  */
 static inline void sysret(uint64_t rsp, uint64_t rcx) {
-	asm volatile ("mov %0, %%rsp; rex.w sysret" : : "r" (rsp), "c" (rcx));
+	asm volatile ("mov $0, %%r11; mov %0, %%rsp; rex.w sysret" : : "r" (rsp), "c" (rcx));
 }
 
 /*

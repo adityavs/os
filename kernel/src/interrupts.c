@@ -111,7 +111,6 @@ void isr_handler(struct isr_stack s) {
 		printf("\033[97m* \033[0mSystem halted.\n");
 
 		asm ("cli");
-		for (;;)
-			asm ("hlt");
+		for (;;);
 	}
 }

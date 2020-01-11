@@ -26,7 +26,7 @@ struct tty_ansi_parser {
 };
 
 struct tty_cell {
-	uint8_t ch;
+	int8_t ch;
 	enum vga_color fg : 4;
 	enum vga_color bg : 4;
 } __attribute__ ((packed));

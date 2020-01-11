@@ -4,18 +4,18 @@ context_switch:
 	pushfq
 
 	; Save previous task stack pointer
-	mov [rdi + 8], rsp
+	mov [rdi + 0], rsp
 
 	; Load new task stack pointer
-	mov rsp, [rsi + 8]
+	mov rsp, [rsi + 0]
 
 	; Change TSS's RSP0
 	extern tss
-	mov rax, [rsi + 16]
+	mov rax, [rsi + 8]
 	mov qword [tss + 4], rax
 
 	; Change CR3
-	mov rax, [rsi + 24]
+	mov rax, [rsi + 16]
 	mov cr3, rax
 
 	popfq

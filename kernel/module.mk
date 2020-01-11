@@ -7,7 +7,7 @@ $(BUILDDIR)/kernel.bin: $(LIBDIR)/libk.a $(KERNEL_OBJECTS) $(KERNEL_LINKER)
 	@mkdir -p "$(@D)"
 	@echo "LD $@"
 	@$(LD) $(LDFLAGS) -T $(KERNEL_LINKER) -o build/kernel/kernel.elf $(KERNEL_OBJECTS) -lk
-	@objcopy -O binary --only-section={.boot,.text,.rodata,.data} build/kernel/kernel.elf $@
+	@objcopy -O binary --only-section={.boot,.text,.rodata*,.data} build/kernel/kernel.elf $@
 
 build/kernel/%.s.o: kernel/src/%.s
 	@mkdir -p "$(@D)"

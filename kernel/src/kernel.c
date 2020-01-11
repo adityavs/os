@@ -26,7 +26,6 @@ void task2_main() {
 void kernel_main() {
 	// Video
 	vga_init();
-	tty_init();
 
 	// Interrupts
 	interrupts_init();
@@ -48,10 +47,10 @@ void kernel_main() {
 	struct task* task1 = task_new(&task1_main);
 	struct task* task2 = task_new(&task2_main);
 
-	task_schedule(task2);
-	task_schedule(task1);
+	task_add(task2);
+	task_add(task1);
 
 	// Idle kernel
 	for (;;)
-		task_switch(true);
+		task_yield();
 }

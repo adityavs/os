@@ -6,20 +6,19 @@
 
 #include "kernel/cpu.h"
 
-struct tty tty;
-
-void tty_init() {
-	tty.buffer = (struct tty_cell*) 0xb8000;
-	tty.width = 80;
-	tty.height = 25;
-	tty.cursor_x = 0;
-	tty.cursor_y = 0;
-	tty.fg = VGA_WHITE;
-	tty.bg = VGA_BLACK;
-}
+struct tty tty = {
+	.buffer = (struct tty_cell*) 0xB8000,
+	.width = 80, .height = 25,
+	.cursor_x = 0, .cursor_y = 0,
+	.fg = VGA_WHITE, .bg = VGA_BLACK,
+	.ansi_parser = {
+		.state = ANSI_ESC,
+	},
+};
 
 void tty_clear() {
-	tty.cursor_x = tty.cursor_y = 0;
+	tty.cursor_x = 0;
+	tty.cursor_y = 0;
 	for (size_t i = 0; i < tty.width * tty.height; i++) {
 		tty.buffer[i].ch = ' ';
 		tty.buffer[i].fg = tty.fg;

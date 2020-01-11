@@ -124,8 +124,8 @@ main16:
 	lidt [idt.descriptor]
 
 	; Enter long mode
-	; set PAE and PGE bits
-	mov eax, 0b10100000
+	; set PAE, PGE, OSFXSR and OSXMMEXCPT bits
+	mov eax, 0b11010100000
 	mov cr4, eax
 
 	; point CR3 at the P4
@@ -139,8 +139,10 @@ main16:
 	wrmsr
 
 	; activate long mode
+	; clear EM and set MP bits
 	mov ebx, cr0
-	or ebx, 0x80000001
+	and ebx, ~(1 << 3)
+	or ebx, 0x80000011
 	mov cr0, ebx
 
 	; Load the GDT

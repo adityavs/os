@@ -15,3 +15,5 @@ build/prog2/%.c.o: prog2/src/%.c
 	@mkdir -p "$(@D)"
 	@echo "CC $@"
 	@$(CC) $(CFLAGS) -MD -c -o $@ $<
+
+-include $(PROG2_OBJECTS:.o=.d)

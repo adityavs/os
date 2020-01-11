@@ -14,7 +14,7 @@ LD:=x86_64-elf-gcc --sysroot=$(SYSROOT) -isystem=/include
 
 ASFLAGS:=-f elf64
 ARFLAGS:=
-CFLAGS:=-Wall -Wextra -ffreestanding -nostdlib
+CFLAGS:=-Wall -Wextra -ffreestanding -nostdlib -O3
 LDFLAGS:=-nostdlib
 
 all: headers $(BUILDDIR)/hdd.img

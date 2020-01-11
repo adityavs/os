@@ -4,21 +4,24 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-struct task {
-	uint64_t pid;
+enum task_status {
+	TASK_RUNNING, TASK_READY, TASK_IOWAIT, TASK_DONE,
+};
 
+struct task {
 	void* user_stack;
 	void* kernel_stack;
 	struct page_table* page_map;
-
-	struct task* next;
+	enum task_status status;
 };
 
-void context_switch(struct task*, struct task*);
+extern void context_switch(struct task*, struct task*);
 
 void task_init();
 struct task* task_new(void*);
-void task_schedule(struct task*);
-void task_switch(bool);
+int task_add(struct task*);
+
+void task_yield();
+void task_exit();
 
 #endif
